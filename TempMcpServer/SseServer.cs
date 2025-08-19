@@ -111,7 +111,7 @@ namespace TempMcpServer
                                     })
                             }).ToList()
                         }),
-                    CallToolHandler = async (request, _) =>
+                    CallToolHandler = async (request, token) =>
                     {
                         if (request.Params is null)
                         {
@@ -124,7 +124,7 @@ namespace TempMcpServer
                             throw new McpServerException("Called an unregistered tool");
                         }
 
-                        return await tool.Tool(request.Params.Arguments ?? new Dictionary<string, object>());
+                        return await tool.Tool(request.Params.Arguments ?? new Dictionary<string, object>(), token);
                     }
                 },
                 Resources = new ResourcesCapability
