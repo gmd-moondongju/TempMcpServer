@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol.Transport;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
+using TempMcpServer.Models;
 
 namespace TempMcpServer
 {
@@ -23,6 +24,7 @@ namespace TempMcpServer
         }
 
         public static async Task RunAsync(
+            InitializationData initData,
             ILoggerFactory? loggerFactory = null,
             CancellationToken cancellationToken = default)
         {
@@ -41,39 +43,7 @@ namespace TempMcpServer
                 ServerInstructions = "This is a test server with only stub functionality"
             };
 
-            IMcpServer? server = null;
-
             Console.WriteLine("Registering handlers.");
-
-            #region Helped method
-
-            static CreateMessageRequestParams CreateRequestSamplingParams(
-                string context,
-                string uri,
-                int maxTokens = 100)
-            {
-                return new CreateMessageRequestParams
-                {
-                    Messages = new[]
-                    {
-                        new SamplingMessage
-                        {
-                            Role = Role.User,
-                            Content = new Content
-                            {
-                                Type = "text",
-                                Text = $"Resource {uri} context: {context}"
-                            }
-                        }
-                    },
-                    SystemPrompt = "You are a helpful test server.",
-                    MaxTokens = maxTokens,
-                    Temperature = 0.7f,
-                    IncludeContext = ContextInclusion.ThisServer
-                };
-            }
-
-            #endregion
 
             List<Resource> resources = new();
             List<ResourceContents> resourceContents = new();
@@ -118,7 +88,6 @@ namespace TempMcpServer
             }
 
             const int pageSize = 10;
-            var mcpServer = server;
             options.Capabilities = new ServerCapabilities
             {
                 Tools = new ToolsCapability
@@ -126,47 +95,21 @@ namespace TempMcpServer
                     ListToolsHandler = (_, _) => Task.FromResult(
                         new ListToolsResult
                         {
-                            Tools = new List<Tool>
+                            Tools = initData.Tools.Select(tool => new Tool
                             {
-                                new()
-                                {
-                                    Name = "echo",
-                                    Description = "Echoes the input back to the client.",
-                                    InputSchema = JsonSerializer.Deserialize<JsonElement>(
-                                        @"{
-    ""type"": ""object"",
-    ""properties"": {
-        ""message"": {
-            ""type"": ""string"",
-            ""description"": ""The input to echo back.""
-        }
-    },
-    ""required"": [""message""]
-}"
-                                    )
-                                },
-                                new()
-                                {
-                                    Name = "sampleLLM",
-                                    Description = "Samples from an LLM using MCP's sampling feature.",
-                                    InputSchema = JsonSerializer.Deserialize<JsonElement>(
-                                        @"{
-    ""type"": ""object"",
-    ""properties"": {
-        ""prompt"": {
-            ""type"": ""string"",
-            ""description"": ""The prompt to send to the LLM""
-        },
-        ""maxTokens"": {
-            ""type"": ""number"",
-            ""description"": ""Maximum number of tokens to generate""
-        }
-    },
-    ""required"": [""prompt"", ""maxTokens""]
-}"
-                                    )
-                                }
-                            }
+                                Name = tool.Name,
+                                Description = tool.Description,
+                                InputSchema = JsonSerializer.SerializeToElement(
+                                    new ToolSchema
+                                    {
+                                        Type = "object",
+                                        Properties = tool.Parameters.ToDictionary(
+                                            parameter => parameter.Name,
+                                            parameter => new Property
+                                                { Type = parameter.Type, Description = parameter.Description }),
+                                        Required = tool.Parameters.Select(parameter => parameter.Name).ToArray()
+                                    })
+                            }).ToList()
                         }),
                     CallToolHandler = async (request, _) =>
                     {
@@ -175,51 +118,13 @@ namespace TempMcpServer
                             throw new McpServerException("Missing required parameter 'name'");
                         }
 
-                        switch (request.Params.Name)
+                        var tool = initData.Tools.FirstOrDefault(tool => string.Equals(request.Params.Name, tool.Name));
+                        if (tool?.Tool is null)
                         {
-                            case "echo":
-                            {
-                                if (request.Params.Arguments is null ||
-                                    !request.Params.Arguments.TryGetValue("message", out var message))
-                                {
-                                    throw new McpServerException("Missing required argument 'message'");
-                                }
-
-                                return new CallToolResponse
-                                {
-                                    Content = new List<Content> { new() { Text = "Echo: " + message, Type = "text" } }
-                                };
-                            }
-                            case "sampleLLM":
-                            {
-                                if (request.Params.Arguments is null ||
-                                    !request.Params.Arguments.TryGetValue("prompt", out var prompt) ||
-                                    !request.Params.Arguments.TryGetValue("maxTokens", out var maxTokens))
-                                {
-                                    throw new McpServerException("Missing required arguments 'prompt' and 'maxTokens'");
-                                }
-
-                                var sampleResult = await mcpServer!.RequestSamplingAsync(
-                                    CreateRequestSamplingParams(
-                                        prompt?.ToString() ?? "",
-                                        "sampleLLM",
-                                        Convert.ToInt32(maxTokens?.ToString())),
-                                    cancellationToken);
-
-                                return new CallToolResponse
-                                {
-                                    Content = new List<Content>
-                                    {
-                                        new()
-                                        {
-                                            Text = $"LLM sampling result: {sampleResult.Content.Text}", Type = "text"
-                                        }
-                                    }
-                                };
-                            }
-                            default:
-                                throw new McpServerException($"Unknown tool: {request.Params.Name}");
+                            throw new McpServerException("Called an unregistered tool");
                         }
+
+                        return await tool.Tool(request.Params.Arguments ?? new Dictionary<string, object>());
                     }
                 },
                 Resources = new ResourcesCapability
@@ -418,7 +323,7 @@ namespace TempMcpServer
             };
 
             loggerFactory ??= CreateLoggerFactory();
-            server = McpServerFactory.Create(
+            var server = McpServerFactory.Create(
                 new HttpListenerSseServerTransport("TestServer", 3001, loggerFactory),
                 options,
                 loggerFactory);

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TempMcpServer", "TempMcpSer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TempMcpServer.Test", "TempMcpServer.Test\TempMcpServer.Test.csproj", "{AA5881D6-71F0-4DB6-B6AF-79F86578565B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TempMcpServer.Demo", "TempMcpServer.Demo\TempMcpServer.Demo.csproj", "{F4423A7A-8108-4E21-8194-1E307B3D5EB1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{AA5881D6-71F0-4DB6-B6AF-79F86578565B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA5881D6-71F0-4DB6-B6AF-79F86578565B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA5881D6-71F0-4DB6-B6AF-79F86578565B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4423A7A-8108-4E21-8194-1E307B3D5EB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4423A7A-8108-4E21-8194-1E307B3D5EB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4423A7A-8108-4E21-8194-1E307B3D5EB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4423A7A-8108-4E21-8194-1E307B3D5EB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
