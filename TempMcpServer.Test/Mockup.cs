@@ -1,7 +1,7 @@
 ﻿using ModelContextProtocol.Protocol.Types;
 using TempMcpServer.Models;
 
-namespace TempMcpServer;
+namespace TempMcpServer.Test;
 
 public static class Mockup
 {
@@ -17,9 +17,9 @@ public static class Mockup
                     new("param1", "string", "First parameter"),
                     new("param2", "number", "Second parameter")
                 },
-                async _ =>
+                async (_, cancellationToken) =>
                 {
-                    await Task.Delay(10);
+                    await Task.Delay(10, cancellationToken);
                     return new CallToolResponse
                     {
                         Content = [new Content { Type = "text", Text = "Test response" }]
@@ -33,9 +33,9 @@ public static class Mockup
                 {
                     new("message", "string", "Message to echo")
                 },
-                async args =>
+                async (args, cancellationToken) =>
                 {
-                    await Task.Delay(10);
+                    await Task.Delay(10, cancellationToken);
                     var message = args.TryGetValue("message", out var arg) ? arg.ToString() : "No message";
                     return new CallToolResponse
                     {

@@ -1,4 +1,6 @@
-﻿namespace TempMcpServer.Demo
+﻿using TempMcpServer.Test;
+
+namespace TempMcpServer.Demo
 {
     internal class Program
     {

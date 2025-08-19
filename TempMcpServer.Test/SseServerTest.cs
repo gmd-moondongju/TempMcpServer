@@ -78,12 +78,12 @@ public sealed class SseServerTest
                     {
                         new($"param_{index}", "string", $"Parameter for tool {index}")
                     },
-                    async _ =>
+                    async (_, cancellationToken) =>
                     {
-                        await Task.Delay(10);
+                        await Task.Delay(10, cancellationToken);
                         return new CallToolResponse
                         {
-                            Content = [new Content() { Type = "text", Text = $"Response from tool {index}" }]
+                            Content = [new Content { Type = "text", Text = $"Response from tool {index}" }]
                         };
                     }
                 ));
@@ -131,12 +131,12 @@ public sealed class SseServerTest
                     new("objectParam", "object", "An object parameter"),
                     new("arrayParam", "array", "An array parameter")
                 },
-                async _ =>
+                async (_, cancellationToken) =>
                 {
-                    await Task.Delay(10);
+                    await Task.Delay(10, cancellationToken);
                     return new CallToolResponse
                     {
-                        Content = [new Content() { Type = "text", Text = "Complex tool response" }]
+                        Content = [new Content { Type = "text", Text = "Complex tool response" }]
                     };
                 }
             )
